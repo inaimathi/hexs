@@ -20,15 +20,16 @@
    :headers {"Content-Type" "text/html; charset=utf-8"}
    :body (hic/html [:html
                     [:head
-                     [:script {:src "/js/hexs.js" :type "application/javascript"}]]
-                    [:body
-                     [:div {:id "app"}
-                      "Hello!"]]])})
+                     [:script {:src "/js/hexs.js" :type "application/javascript"}]
+                     [:link {:href "/css/hexs.css" :media "screen"
+                             :rel "stylesheet" :type "text/css"}]]
+                    [:body [:div {:id "app"} "Hello!"]]])})
 
 (def routes
   ["" [["" index]
        ["/" index]
-       ["/js/hexs.js" (serve-resource "hexs.js" "application/javascript")]]])
+       ["/js/hexs.js" (serve-resource "hexs.js" "application/javascript")]
+       ["/css/hexs.css" (serve-resource "hexs.css" "text/css")]]])
 
 ;;;;;;;;;; CLI Interface
 (def cli-options
