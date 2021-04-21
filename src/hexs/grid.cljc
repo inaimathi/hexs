@@ -110,8 +110,6 @@
                (assoc came-from next cur)
                (inc count))))))
 
-;; (grid/find-path (grid/empty nil :radius 5) [-2 2 0] [2 -2 0])
-
 (defn ^:export slice
   "Grid a -> [ Space ] -> Grid a"
   [grid spaces]
