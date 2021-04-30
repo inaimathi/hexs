@@ -125,3 +125,12 @@
           (fn [memo space] (assoc memo space empty-val)) {}
           (neighborhood zero :radius radius))
          zero empty-val))))
+
+(defn map
+  "(Space -> a -> b) -> Grid a -> [b]
+
+  Works in z-order for rendering purposes"
+  [f grid]
+  (->> grid
+       (sort-by #(-> % first (get 2)))
+       (clojure.core/map (fn [[coords space]] (f coords space)))))

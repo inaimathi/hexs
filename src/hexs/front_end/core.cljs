@@ -38,8 +38,7 @@
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
-       (sort-by #(-> % first (get 2)))
-       (map (fn [[coords _]] [hex coords :pointy? pointy?]))
+       (grid/map (fn [coords _] [hex coords :pointy? pointy?]))
        (cons {:transform (svg/unparse-transform :translate [170 140])})
        (cons :g)
        vec))
