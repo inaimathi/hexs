@@ -33,13 +33,14 @@
     ;;                       v :moved cur
     ;;                       :line (if (:clicked state) (set (grid/line (:clicked state) cur)) #{})))))
     ;;   :on-click #(swap! current (fn [s] (if (= (:clicked s) cur) (dissoc s :clicked) (assoc s :clicked cur))))}]
-    (sprites/pointy-space :transform (svg/transform :scale 0.5 :translate [(+ (* dx 35) 200) (+ (* dy 35) 200)]))
+    (sprites/pointy-space :transform (svg/unparse-transform :scale 0.5 :translate [(+ (* dx 35) 200) (+ (* dy 35) 200)]))
     ))
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
+       (sort-by #(-> % first (get 2)))
        (map (fn [[coords _]] [hex coords :pointy? pointy?]))
-       (cons {:transform (svg/transform :translate [170 140])})
+       (cons {:transform (svg/unparse-transform :translate [170 140])})
        (cons :g)
        vec))
 
