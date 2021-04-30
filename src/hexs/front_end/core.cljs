@@ -12,26 +12,31 @@
     [(* (- y x) 0.95) (* z 1.6)]
     [(* x 1.6) (* (- y z) 0.95)]))
 
-(defonce current (r/atom nil))
+(defonce current (r/atom {}))
 
 (defn hex [[x y z] & {:keys [pointy? scale translate] :or {pointy? nil}}]
   (let [pointy? (if (nil? pointy?) true (not (not pointy?)))
-        [dx dy] (-space-layout pointy? x y z)]
+        [dx dy] (-space-layout pointy? x y z)
+        cur [x y z]]
     [:polygon
-     {:class "hex"
+     {:class (str "hex" (when (contains? (:line @current) cur) " lined"))
       :points (if pointy?
                 "0,-1 -0.875,-0.5 -0.875,0.5 0,1 0.875,0.5 0.875,-0.5"
                 "-1,0 -0.5,-0.875 0.5,-0.875 1,0 0.5,0.875 -0.5,0.875")
       :transform (svg/transform :scale 10 :translate [dx dy])
-      :on-click #(let [cur [x y z]]
-                   (.log js/console "CLICKED!" cur)
-                   (reset! current cur)
-                   (.log js/console "Set to" @current))}]))
+      :onMouseMove #(let [state @current]
+                      (swap!
+                       current
+                       (fn [v]
+                         (assoc
+                          v :moved cur
+                          :line (if (:clicked state) (set (grid/line (:clicked state) cur)) #{})))))
+      :on-click #(swap! current (fn [s] (if (= (:clicked s) cur) (dissoc s :clicked) (assoc s :clicked cur))))}]))
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
-       (map (fn [[coords _]] [hex coords]))
-       (cons {:transform (svg/transform :translate [110 100])})
+       (map (fn [[coords _]] [hex coords :pointy? pointy?]))
+       (cons {:transform (svg/transform :translate [170 140])})
        (cons :g)
        vec))
 
@@ -43,7 +48,7 @@
    [:div "The last thing clicked is " (str @current)]
    [:svg {:xmlns "http://www.w3.org/2000/svg" :viewBox "0 0 841.9 595.3"}
     [:g
-     (grid->svg (grid/empty nil :radius 5) :pointy? true)
+     (grid->svg (grid/empty nil :radius 8) :pointy? true)
      [:circle :cx "420.69" :cy "296.5" :r "45.7"]
      [:path {:d "M520.5 78.1z"}]]]])
 

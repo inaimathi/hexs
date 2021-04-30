@@ -1,2 +1,3 @@
 .hex { fill: #aabbcc; }
 .hex:hover { fill: red; }
+.hex.lined { fill: #0066ff;}
