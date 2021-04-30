@@ -1,4 +1,4 @@
-(ns hexs.front-end.svg
+(ns hexs.svg
   (:require [clojure.string :as str]))
 
 (defn transform [& {:keys [scale translate rotate]}]
@@ -11,3 +11,5 @@
         ts (remove nil? [scale translate rotate])
         transform (when (not (empty? ts)) (str/join ", " ts))]
     transform))
+
+(defn ->hic [svg-tree] svg-tree)

@@ -5,7 +5,8 @@
             [reagent.dom :as rd]
 
             [hexs.grid :as grid]
-            [hexs.front-end.svg :as svg]))
+            [hexs.svg :as svg]
+            [hexs.front-end.sprites :as sprites]))
 
 (defn -space-layout [pointy? x y z]
   (if pointy?
@@ -18,20 +19,22 @@
   (let [pointy? (if (nil? pointy?) true (not (not pointy?)))
         [dx dy] (-space-layout pointy? x y z)
         cur [x y z]]
-    [:polygon
-     {:class (str "hex" (when (contains? (:line @current) cur) " lined"))
-      :points (if pointy?
-                "0,-1 -0.875,-0.5 -0.875,0.5 0,1 0.875,0.5 0.875,-0.5"
-                "-1,0 -0.5,-0.875 0.5,-0.875 1,0 0.5,0.875 -0.5,0.875")
-      :transform (svg/transform :scale 10 :translate [dx dy])
-      :onMouseMove #(let [state @current]
-                      (swap!
-                       current
-                       (fn [v]
-                         (assoc
-                          v :moved cur
-                          :line (if (:clicked state) (set (grid/line (:clicked state) cur)) #{})))))
-      :on-click #(swap! current (fn [s] (if (= (:clicked s) cur) (dissoc s :clicked) (assoc s :clicked cur))))}]))
+    ;; [:polygon
+    ;;  {:class (str "hex" (when (contains? (:line @current) cur) " lined"))
+    ;;   :points (if pointy?
+    ;;             "0,-1 -0.875,-0.5 -0.875,0.5 0,1 0.875,0.5 0.875,-0.5"
+    ;;             "-1,0 -0.5,-0.875 0.5,-0.875 1,0 0.5,0.875 -0.5,0.875")
+    ;;   :transform (svg/transform :scale 10 :translate [dx dy])
+    ;;   :onMouseMove #(let [state @current]
+    ;;                   (swap!
+    ;;                    current
+    ;;                    (fn [v]
+    ;;                      (assoc
+    ;;                       v :moved cur
+    ;;                       :line (if (:clicked state) (set (grid/line (:clicked state) cur)) #{})))))
+    ;;   :on-click #(swap! current (fn [s] (if (= (:clicked s) cur) (dissoc s :clicked) (assoc s :clicked cur))))}]
+    (sprites/pointy-space :transform (svg/transform :scale 0.5 :translate [(+ (* dx 35) 200) (+ (* dy 35) 200)]))
+    ))
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
