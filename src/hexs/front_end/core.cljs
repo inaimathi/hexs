@@ -13,9 +13,19 @@
     [(* (- y x) 0.95) (* z 1.6)]
     [(* x 1.6) (* (- y z) 0.95)]))
 
+(defonce
+  game-state
+  (r/atom
+   {:grid
+    (assoc
+     (grid/empty {} :radius 8)
+     [0 0 0]
+     {:sprite :player})
+    :sprites {:player [0 0 0]}}))
+
 (defonce current (r/atom {}))
 
-(defn hex [[x y z] & {:keys [pointy? scale translate] :or {pointy? nil}}]
+(defn hex [[x y z] & {:keys [space pointy? scale translate] :or {pointy? nil space nil}}]
   (let [pointy? (if (nil? pointy?) true (not (not pointy?)))
         [dx dy] (-space-layout pointy? x y z)
         cur [x y z]]
@@ -33,25 +43,29 @@
     ;;                       v :moved cur
     ;;                       :line (if (:clicked state) (set (grid/line (:clicked state) cur)) #{})))))
     ;;   :on-click #(swap! current (fn [s] (if (= (:clicked s) cur) (dissoc s :clicked) (assoc s :clicked cur))))}]
-    (sprites/pointy-space :transform (svg/unparse-transform :scale 0.5 :translate [(+ (* dx 35) 200) (+ (* dy 35) 200)]))
-    ))
+    (let [transform (svg/unparse-transform
+                     :scale 0.3
+                     :translate [(+ (* dx 35) 20) (+ (* dy 35) 20)])]
+      [:g {:transform transform}
+       (sprites/pointy-space)
+       (when (= :player (:sprite space)) (sprites/alien :class "player"))])))
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
-       (grid/map (fn [coords _] [hex coords :pointy? pointy?]))
+       (grid/map
+        (fn [coords space]
+          (.log js/console "RENDERING" (str coords) (str space))
+          [hex coords :space space :pointy? pointy?]))
        (cons {:transform (svg/unparse-transform :translate [170 140])})
        (cons :g)
        vec))
-
-(defn space []
-  (hex :pointy? true :scale 10 :translate [10 10]))
 
 (defn game []
   [:div {}
    [:div "The last thing clicked is " (str @current)]
    [:svg {:xmlns "http://www.w3.org/2000/svg" :viewBox "0 0 841.9 595.3"}
     [:g
-     (grid->svg (grid/empty nil :radius 8) :pointy? true)
+     (grid->svg (:grid @game-state) :pointy? true)
      [:circle :cx "420.69" :cy "296.5" :r "45.7"]
      [:path {:d "M520.5 78.1z"}]]]])
 

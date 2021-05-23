@@ -1,5 +1,9 @@
 (ns hexs.svg
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.edn :as edn]))
+
+(defn drop-but [n coll]
+  (drop (- (count coll) n) coll))
 
 (defn parse-path [path-string]
   (->> (str/split path-string #" ")
@@ -43,20 +47,31 @@
 (defn ->hic [svg-tree] svg-tree)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Hacking with SVG sprites
-;; (def SVG (xml/parse (io/file (io/resource "svg/hexagon-tiles.svg"))))
-;; (->> SVG :content second :content (take 4) (map (fn [path] [:path (:attrs path)])) zerofi)
+;; (->> "svg/hexagon-tiles.svg" io/resource io/file xml/parse :content second :content (take 5) (map (fn [path] [:path (:attrs path)])) zerofi)
+
+(defn update-inf [m ks f]
+  (if (get-in m ks) (update-in m ks f) m))
+
+(defn -normalize [path]
+  (update-inf
+   path [1 :fill-opacity]
+   #(let [opacity (edn/read-string %)]
+      (->> (edn/read-string %)
+           (format "%.2f")))))
 
 (defn zerofi [paths]
-  (let [points (->> paths
+  (let [paths (map -normalize paths)
+        points (->> paths
                     (map second)
                     (map :d)
-                    (map svg/parse-path))
+                    (map parse-path))
         xys (mapcat
              (partial map (fn [tup] (if (= 2 (count tup)) tup (vec (rest tup)))))
              points)
-        [[minx miny] [maxx maxy]] (svg/box-of xys)
-        dx (int (/ (- maxx minx) 2))
-        dy (int (/ (- maxy miny) 2))]
+        [[minx miny] [maxx maxy]] (box-of xys)
+        w (- maxx minx)
+        h (- maxy miny)
+        [dx dy] (map #(do (println %) (Math/round (float %))) [(+ minx (/ w 2)) (+ miny (/ h 2))])]
 
     (map
      (fn [path]
@@ -64,12 +79,12 @@
         path [1 :d]
         (fn [path-str]
           (->> path-str
-               svg/parse-path
+               parse-path
                (map (fn [el]
                       (if (= 2 (count el))
                         (let [[x y] el]
                           [(int (- x dx)) (int (- y dy))])
                         (let [[name x y] el]
                           [name (int (- x dx)) (int (- y dy))]))))
-               svg/unparse-path))))
+               unparse-path))))
      paths)))
