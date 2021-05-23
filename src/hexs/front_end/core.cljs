@@ -20,41 +20,45 @@
     (assoc
      (grid/empty {} :radius 8)
      [0 0 0]
-     {:sprite :player})
+     {:sprites [:player]})
     :sprites {:player [0 0 0]}}))
 
-(defonce current (r/atom {}))
+(defn updates-in [m ks f & ks+fs]
+  (assert (even? ks+fs) "You must pass an even number of key/function pairs")
+  (reduce
+   (fn [memo [ks f]]
+     (update-in memo ks f))
+   m (cons ks (cons f ks+fs))))
+
+(defn move-sprite! [name [x y z]]
+  (let [dest [x y z]]
+    (swap!
+     game-state
+     (fn [state]
+       (let [src (get-in state [:sprites name])]
+         (-> state
+             (update-in [:grid src :sprites] #(vec (remove (fn [s] (= s name)) %)))
+             (update-in [:grid dest :sprites] #(vec (conj % name)))
+             (assoc-in [:sprites name] dest)))))))
 
 (defn hex [[x y z] & {:keys [space pointy? scale translate] :or {pointy? nil space nil}}]
   (let [pointy? (if (nil? pointy?) true (not (not pointy?)))
         [dx dy] (-space-layout pointy? x y z)
         cur [x y z]]
-    ;; [:polygon
-    ;;  {:class (str "hex" (when (contains? (:line @current) cur) " lined"))
-    ;;   :points (if pointy?
-    ;;             "0,-1 -0.875,-0.5 -0.875,0.5 0,1 0.875,0.5 0.875,-0.5"
-    ;;             "-1,0 -0.5,-0.875 0.5,-0.875 1,0 0.5,0.875 -0.5,0.875")
-    ;;   :transform (svg/transform :scale 10 :translate [dx dy])
-    ;;   :onMouseMove #(let [state @current]
-    ;;                   (swap!
-    ;;                    current
-    ;;                    (fn [v]
-    ;;                      (assoc
-    ;;                       v :moved cur
-    ;;                       :line (if (:clicked state) (set (grid/line (:clicked state) cur)) #{})))))
-    ;;   :on-click #(swap! current (fn [s] (if (= (:clicked s) cur) (dissoc s :clicked) (assoc s :clicked cur))))}]
     (let [transform (svg/unparse-transform
                      :scale 0.3
                      :translate [(+ (* dx 35) 20) (+ (* dy 35) 20)])]
-      [:g {:transform transform}
+      [:g {:transform transform
+           ;; :onMouseMove #(.log js/console (str "MOVING AT" [x y z]))
+           :on-click #(move-sprite! :player [x y z])}
        (sprites/pointy-space)
-       (when (= :player (:sprite space)) (sprites/alien :class "player"))])))
+       (when (contains? (set (:sprites space)) :player)
+         (sprites/alien :class "player" :transform (svg/unparse-transform :translate [5 -25])))])))
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
        (grid/map
         (fn [coords space]
-          (.log js/console "RENDERING" (str coords) (str space))
           [hex coords :space space :pointy? pointy?]))
        (cons {:transform (svg/unparse-transform :translate [170 140])})
        (cons :g)
@@ -62,18 +66,11 @@
 
 (defn game []
   [:div {}
-   [:div "The last thing clicked is " (str @current)]
    [:svg {:xmlns "http://www.w3.org/2000/svg" :viewBox "0 0 841.9 595.3"}
     [:g
      (grid->svg (:grid @game-state) :pointy? true)
      [:circle :cx "420.69" :cy "296.5" :r "45.7"]
      [:path {:d "M520.5 78.1z"}]]]])
-
-;; (defonce click-count 0)
-
-;; (defn stateful-component []
-;;   [:div {:on-click #(swap! click-count inc)}
-;;    "I have been clicked [" @click-count "] times."])
 
 (defn ^:export run []
   (rd/render
