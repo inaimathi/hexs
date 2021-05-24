@@ -58,6 +58,7 @@
                        (seqable? v) (str/join " " v)
                        :else v) ")"))))
        (str/join ", ")))
+(def =>t unparse-transform)
 
 (defn -svg-map-opts [f svg-tree]
   (let [[node opts children]
