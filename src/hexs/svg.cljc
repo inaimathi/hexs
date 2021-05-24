@@ -5,28 +5,29 @@
 
             [hexs.util :as util]))
 
-(defn drop-but [n coll]
-  (drop (- (count coll) n) coll))
-
 (defn parse-path [path-string]
   (->> (str/split path-string #" ")
        (partition 2)
        (map (fn [[a b]]
-              (if (re-find #"^\d" a)
+              (if (re-find #"^[\d-+]" a)
                 [(edn/read-string a) (edn/read-string b)]
                 [(keyword (subs a 0 1))
                  (edn/read-string (subs a 1))
-                 (edn/read-string b)])))))
+                 (edn/read-string b)])))
+       vec))
 
 (defn unparse-path [path-vec]
   (->> path-vec
        (mapcat
         (fn [el]
-          (if (= 2 (count el))
-            (map str el)
-            (cons (str (name (first el)) (second el))
-                  (map str (rest (rest el)))))))
-       (str/join " ")))
+          (cond (keyword? el) (name el)
+                (number? el) (str el " ")
+                (= 2 (count el)) (map #(str % " ") el)
+                (seqable? el) (cons (str (name (first el)) (second el) " ")
+                                    (map #(str % " ") (rest (rest el))))
+                :else (str el " "))))
+       (apply str)
+       str/trim))
 
 (def transform-names
   #{"rotate" "translate" "scale" "skewX" "skewY" "matrix"})
@@ -58,6 +59,35 @@
                        :else v) ")"))))
        (str/join ", ")))
 
+(defn -svg-map-opts [f svg-tree]
+  (let [[node opts children]
+        (if (map? (second svg-tree))
+          [(first svg-tree) (second svg-tree) (rest (rest svg-tree))]
+          [(first svg-tree) nil (rest svg-tree)])
+        effed (when opts (f opts))
+        mapped (map #(-svg-map-opts f %) children)]
+    (->> (if opts
+           (cons effed mapped)
+           mapped)
+         (cons node)
+         vec)))
+
+(defn parse [svg-tree]
+  (-svg-map-opts
+   (fn [opts]
+     (util/updatef
+      opts :d parse-path
+      :transform parse-transform))
+   svg-tree))
+
+(defn unparse [svg-tree]
+  (-svg-map-opts
+   (fn [opts]
+     (util/updatef
+      opts :d #(if (string? %) % (unparse-path %))
+      :transform #(if (string? %) % (unparse-transform %))))
+   svg-tree))
+
 (defn box-of [points]
   (reduce
    (fn [[[minx miny] [maxx maxy]] [x y]]
@@ -71,11 +101,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Hacking with SVG sprites
 ;; (->> "svg/hexagon-tiles.svg" io/resource io/file xml/parse :content second :content (take 5) (map (fn [path] [:path (:attrs path)])) zerofi)
 
-(defn update-inf [m ks f]
-  (if (get-in m ks) (update-in m ks f) m))
-
 (defn -normalize [path]
-  (update-inf
+  (util/update-inf
    path [1 :fill-opacity]
    #(let [opacity (edn/read-string %)]
       (->> (edn/read-string %)

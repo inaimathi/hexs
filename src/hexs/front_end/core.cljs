@@ -50,7 +50,13 @@
 
 (defn units [[x y z] units]
   (when (contains? (set units) :player)
-    (sprites/alien :class "player" :transform (svg/unparse-transform {:translate [5 -25]}))))
+    [:g
+     ;; [:animate
+     ;;  {:attributeType "CSS" :attributeName "opacity"
+     ;;   ;; :from "1" :to "0.5"
+     ;;   :dur "2s" :repeatCount "indefinite"
+     ;;   :keyTimes "0;0.5;1" :values "1;0.5;1"}]
+     (sprites/alien :class "player" :transform (svg/unparse-transform {:translate [5 -25]}))]))
 
 (defn hex [[x y z] & {:keys [space pointy? scale translate] :or {pointy? nil space nil}}]
   (let [pointy? (if (nil? pointy?) true (not (not pointy?)))
