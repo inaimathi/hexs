@@ -59,13 +59,14 @@
     (let [transform (svg/unparse-transform
                      {:scale 0.3
                       :translate [(+ (* dx 35) 20) (+ (* dy 35) 20)]})]
-      [:g {:transform transform
-           :onMouseEnter #(.log js/console (str "ENTERING" [x y z]))
-           :onMouseMove #(.log js/console (str "MOVING AT" [x y z]))
-           :onMouseLeave #(.log js/console (str "LEAVING" [x y z]))
-           :on-click #(move-sprite! :player [x y z])}()
-       (sprites/pointy-space)
-       [units [x y z] (:units space)]])))
+      ((sprites/=s
+        (sprites/pointy-space)
+        [units [x y z] (:units space)])
+       :transform transform
+       :mouse-enter #(.log js/console (str "ENTERING" [x y z]))
+       :mouse-move #(.log js/console (str "MOVING AT" [x y z]))
+       :mouse-leave #(.log js/console (str "LEAVING" [x y z]))
+       :click #(move-sprite! :player [x y z])))))
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
