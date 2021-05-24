@@ -1,7 +1,19 @@
 (ns hexs.front-end.sprites)
 
-(defn pointy-space [& {:keys [class transform]}]
-  [:g {:class class :transform transform}
+(defn -mk [& elems]
+  (fn [& {:keys [class transform click mouse-move mouse-enter mouse-leave]}]
+    (let [opts (reduce
+                (fn [memo [k v]] (if v (assoc memo k v) memo))
+                {} (partition 2 [:class class
+                                 :transform transform
+                                 :on-click click
+                                 :onMouseMove mouse-move
+                                 :onMouseEnter mouse-enter
+                                 :onMouseLeave mouse-leave]))]
+      (->> elems (cons opts) (cons :g) vec))))
+
+(def pointy-space
+  (-mk
    [:path
     {:d "M-33 3 L-33 -28 Q-16 -36 0 -45 L32 -28 32 3 0 20 -33 3",
      :fill "#8DC435",
@@ -24,10 +36,10 @@
     {:d "M-33 5 L0 22 0 44 -33 27 -33 5",
      :fill-opacity "0.10",
      :fill "#000000",
-     :stroke "none"}]])
+     :stroke "none"}]))
 
-(defn alien [& {:keys [class transform]}]
-  [:g {:class class :transform transform}
+(def alien
+  (-mk
    [:path
     {:d
      "M9 16 Q15 19 15 23 15 27 9 30 4 32 -2 32 -9 32 -14 30 -20 27 -20 23 -20 19 -14 16 -9 13 -2 13 4 13 9 16",
@@ -76,4 +88,4 @@
      "M0 11 Q0 10 1 10 2 10 3 11 3 12 3 13 3 14 3 14 2 15 1 15 0 15 0 14 -1 14 -1 13 -1 12 0 11 M9 7 Q10 7 10 8 10 9 9 9 9 10 8 10 7 10 7 9 6 9 6 8 6 7 7 7 7 6 8 6 9 6 9 7 M7 13 Q7 13 6 13 6 13 5 13 5 12 5 12 5 11 5 11 6 11 6 11 7 11 7 11 8 11 8 12 8 12 7 13",
      :fill-opacity "0.5019607843137255",
      :fill "#8BCFBA",
-     :stroke "none"}]])
+     :stroke "none"}]))

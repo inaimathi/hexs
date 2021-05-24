@@ -14,14 +14,18 @@
     [(* x 1.6) (* (- y z) 0.95)]))
 
 (defonce
+  selection
+  (r/atom []))
+
+(defonce
   game-state
   (r/atom
    {:grid
     (assoc
      (grid/empty {} :radius 8)
      [0 0 0]
-     {:sprites [:player]})
-    :sprites {:player [0 0 0]}}))
+     {:units [:player]})
+    :units {:player [0 0 0]}}))
 
 (defn updates-in [m ks f & ks+fs]
   (assert (even? ks+fs) "You must pass an even number of key/function pairs")
@@ -35,11 +39,18 @@
     (swap!
      game-state
      (fn [state]
-       (let [src (get-in state [:sprites name])]
+       (let [src (get-in state [:units name])]
          (-> state
-             (update-in [:grid src :sprites] #(vec (remove (fn [s] (= s name)) %)))
-             (update-in [:grid dest :sprites] #(vec (conj % name)))
-             (assoc-in [:sprites name] dest)))))))
+             (update-in [:grid src :units] #(vec (remove (fn [s] (= s name)) %)))
+             (update-in [:grid dest :units] #(vec (conj % name)))
+             (assoc-in [:units name] dest)))))))
+
+(defn handle-space-click! [] nil)
+(defn handle-sprite-click! [] nil)
+
+(defn units [[x y z] units]
+  (when (contains? (set units) :player)
+    (sprites/alien :class "player" :transform (svg/unparse-transform :translate [5 -25]))))
 
 (defn hex [[x y z] & {:keys [space pointy? scale translate] :or {pointy? nil space nil}}]
   (let [pointy? (if (nil? pointy?) true (not (not pointy?)))
@@ -49,11 +60,12 @@
                      :scale 0.3
                      :translate [(+ (* dx 35) 20) (+ (* dy 35) 20)])]
       [:g {:transform transform
-           ;; :onMouseMove #(.log js/console (str "MOVING AT" [x y z]))
-           :on-click #(move-sprite! :player [x y z])}
+           :onMouseEnter #(.log js/console (str "ENTERING" [x y z]))
+           :onMouseMove #(.log js/console (str "MOVING AT" [x y z]))
+           :onMouseLeave #(.log js/console (str "LEAVING" [x y z]))
+           :on-click #(move-sprite! :player [x y z])}()
        (sprites/pointy-space)
-       (when (contains? (set (:sprites space)) :player)
-         (sprites/alien :class "player" :transform (svg/unparse-transform :translate [5 -25])))])))
+       [units [x y z] (:units space)]])))
 
 (defn grid->svg [grid & {:keys [pointy?] :or {pointy? false}}]
   (->> grid
