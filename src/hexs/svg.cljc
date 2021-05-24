@@ -1,5 +1,6 @@
 (ns hexs.svg
   (:require [clojure.string :as str]
+            [clojure.set :as set]
             [clojure.edn :as edn]))
 
 (defn drop-but [n coll]
@@ -25,16 +26,36 @@
                   (map str (rest (rest el)))))))
        (str/join " ")))
 
-(defn unparse-transform [& {:keys [scale translate rotate]}]
-  (let [scale (when scale (str "scale(" scale ")"))
-        translate (when translate
-                    (let [[trans-x trans-y] translate]
-                      (str "translate(" trans-x ", " trans-y ")")))
-        rotate (when rotate
-                 (str "rotate(" rotate ")"))
-        ts (remove nil? [scale translate rotate])
-        transform (when (not (empty? ts)) (str/join ", " ts))]
-    transform))
+(def trans>key
+  {"rotate" :rotate
+   "translate" :translate
+   "scale" :scale
+   "skewX" :skew-x
+   "skewY" :skew-y
+   "matrix" :matrix})
+
+(def key>trans (set/map-invert trans>key))
+
+(defn parse-transform [transform-str]
+  (->> transform-str
+       (re-seq #"(\w+)\(([\d\-\+\., ]+)\)")
+       (map rest)
+       (map
+        (fn [[op-name params]]
+          (let [opk (get trans>key op-name)]
+            (assert opk (str "Unknown SVG transform found: '" op-name "'"))
+            [opk
+             (->> (str/split params #"[\s,]+")
+                  (map edn/read-string)
+                  vec)])))
+       (into {})))
+
+(defn unparse-transform [opts]
+  (->> opts
+       (map
+        (fn [[k v]]
+          (format "%s(%s)" (get key>trans k) (str/join ", " v))))
+       (str/join ", ")))
 
 (defn box-of [points]
   (reduce

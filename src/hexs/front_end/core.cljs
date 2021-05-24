@@ -50,15 +50,15 @@
 
 (defn units [[x y z] units]
   (when (contains? (set units) :player)
-    (sprites/alien :class "player" :transform (svg/unparse-transform :translate [5 -25]))))
+    (sprites/alien :class "player" :transform (svg/unparse-transform {:translate [5 -25]}))))
 
 (defn hex [[x y z] & {:keys [space pointy? scale translate] :or {pointy? nil space nil}}]
   (let [pointy? (if (nil? pointy?) true (not (not pointy?)))
         [dx dy] (-space-layout pointy? x y z)
         cur [x y z]]
     (let [transform (svg/unparse-transform
-                     :scale 0.3
-                     :translate [(+ (* dx 35) 20) (+ (* dy 35) 20)])]
+                     {:scale 0.3
+                      :translate [(+ (* dx 35) 20) (+ (* dy 35) 20)]})]
       [:g {:transform transform
            :onMouseEnter #(.log js/console (str "ENTERING" [x y z]))
            :onMouseMove #(.log js/console (str "MOVING AT" [x y z]))
@@ -72,7 +72,7 @@
        (grid/map
         (fn [coords space]
           [hex coords :space space :pointy? pointy?]))
-       (cons {:transform (svg/unparse-transform :translate [170 140])})
+       (cons {:transform (svg/unparse-transform {:translate [170 140]})})
        (cons :g)
        vec))
 
