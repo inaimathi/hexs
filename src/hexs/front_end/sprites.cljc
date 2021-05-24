@@ -1,12 +1,16 @@
 (ns hexs.front-end.sprites)
 
 (defn =s [& elems]
-  (fn [& {:keys [class transform click mouse-move mouse-enter mouse-leave]}]
+  (fn [& {:keys [id class transform click mouse-move mouse-enter mouse-leave mouse-up mouse-down drag]}]
     (let [opts (reduce
                 (fn [memo [k v]] (if v (assoc memo k v) memo))
-                {} (partition 2 [:class class
+                {} (partition 2 [:id id
+                                 :class class
                                  :transform transform
+                                 :ondrag drag
                                  :on-click click
+                                 :onMouseDown mouse-down
+                                 :onMouseUp mouse-up
                                  :onMouseMove mouse-move
                                  :onMouseEnter mouse-enter
                                  :onMouseLeave mouse-leave]))]
