@@ -1,6 +1,6 @@
 (ns hexs.front-end.sprites)
 
-(defn -mk [& elems]
+(defn =s [& elems]
   (fn [& {:keys [class transform click mouse-move mouse-enter mouse-leave]}]
     (let [opts (reduce
                 (fn [memo [k v]] (if v (assoc memo k v) memo))
@@ -13,7 +13,7 @@
       (->> elems (cons opts) (cons :g) vec))))
 
 (def pointy-space
-  (-mk
+  (=s
    [:path
     {:d "M-33 3 L-33 -28 Q-16 -36 0 -45 L32 -28 32 3 0 20 -33 3",
      :fill "#8DC435",
@@ -39,7 +39,7 @@
      :stroke "none"}]))
 
 (def alien
-  (-mk
+  (=s
    [:path
     {:d
      "M9 16 Q15 19 15 23 15 27 9 30 4 32 -2 32 -9 32 -14 30 -20 27 -20 23 -20 19 -14 16 -9 13 -2 13 4 13 9 16",

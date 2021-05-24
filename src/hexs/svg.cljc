@@ -1,7 +1,9 @@
 (ns hexs.svg
   (:require [clojure.string :as str]
             [clojure.set :as set]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+
+            [hexs.util :as util]))
 
 (defn drop-but [n coll]
   (drop (- (count coll) n) coll))
@@ -26,15 +28,8 @@
                   (map str (rest (rest el)))))))
        (str/join " ")))
 
-(def trans>key
-  {"rotate" :rotate
-   "translate" :translate
-   "scale" :scale
-   "skewX" :skew-x
-   "skewY" :skew-y
-   "matrix" :matrix})
-
-(def key>trans (set/map-invert trans>key))
+(def transform-names
+  #{"rotate" "translate" "scale" "skewX" "skewY" "matrix"})
 
 (defn parse-transform [transform-str]
   (->> transform-str
@@ -42,19 +37,25 @@
        (map rest)
        (map
         (fn [[op-name params]]
-          (let [opk (get trans>key op-name)]
-            (assert opk (str "Unknown SVG transform found: '" op-name "'"))
-            [opk
-             (->> (str/split params #"[\s,]+")
-                  (map edn/read-string)
-                  vec)])))
+          (assert (contains? transform-names op-name)
+                  (str "Unknown SVG transform found: '" op-name "'"))
+          [(keyword op-name)
+           (->> (str/split params #"[\s,]+")
+                (map edn/read-string)
+                vec)]))
        (into {})))
 
 (defn unparse-transform [opts]
   (->> opts
        (map
         (fn [[k v]]
-          (format "%s(%s)" (get key>trans k) (str/join ", " v))))
+          (let [op-name (name k)]
+            (assert (contains? transform-names op-name)
+                    (str "Unknown SVG transform found: '" op-name "'"))
+            (str op-name "("
+                 (cond (string? v) v
+                       (seqable? v) (str/join " " v)
+                       :else v) ")"))))
        (str/join ", ")))
 
 (defn box-of [points]
@@ -78,7 +79,8 @@
    path [1 :fill-opacity]
    #(let [opacity (edn/read-string %)]
       (->> (edn/read-string %)
-           (format "%.2f")))))
+           util/round-to
+           str))))
 
 (defn zerofi [paths]
   (let [paths (map -normalize paths)

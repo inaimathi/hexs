@@ -13,4 +13,10 @@
     (neg? n) (- n)
     :else n))
 
+(defn round-to
+  ([num] (round-to num 2))
+  ([num digits]
+   (let [d (Math/pow 10 digits)]
+     (/ (Math/round (* num d)) d))))
+
 (defn always [return-value] (fn [& _] return-value))
